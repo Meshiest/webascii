@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Image Processor</title>
+    <script src="png.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: #eee;
+        font-family: 'Roboto', sans-serif;
+      }
+
+      nav {
+        background-color: #1976D2;
+        color: #fff;
+        font-size: 30px;
+        height: 40px;
+        width: 100%;
+      }
+
+      .content {
+          margin: auto;
+          max-width: 800px;
+      }
+
+      .card {
+        background-color: #fff;
+        box-shadow: 0 2px 4px #999;
+        display: flex;
+        flex-direction: column;
+        margin: 20px auto;
+      }
+
+      .upload-field {
+        position: relative;
+        margin: 8px;
+        height: 80px;
+      }
+
+      .upload-background {
+        background-size: cover;
+        background-position: 50% 50%;
+        border-radius: 4px;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+      }
+
+      .upload-input {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+      }
+
+      .upload-box {
+        align-items: center;
+        border: 3px #ccc dashed;
+        border-radius: 4px;
+        color: #999;
+        display: flex;
+        font-size: 30px;
+        height: 100%;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        width: 100%;
+      }
+
+      textarea {
+        white-space: pre-wrap;       /* Since CSS 2.1 */
+        white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+        white-space: -pre-wrap;      /* Opera 4-6 */
+        white-space: -o-pre-wrap; 
+        word-wrap: break-word;
+        margin: 8px;
+        padding: 4px;
+        background-color: #ddd;
+        box-shadow: 0 0 2px #ccc inset;
+      }
+
+      button {
+        background: #1E88E5;
+        color: #fff;
+        
+        font-size: 1em;
+        
+        border-radius: 4px;
+        padding: 8px;
+        margin: 8px;
+        border: none;
+        transition: background 0.5s, box-shadow 0.5s;
+      }
+
+
+      button:hover, button:focus {
+        background: #2196F3;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+
+    function copyToClipboard(text) {
+      if (window.clipboardData) { // Internet Explorer
+        window.clipboardData.setData('Text', text);
+      } else {  
+        unsafeWindow.netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');  
+        const clipboardHelper = Components.classes['@mozilla.org/widget/clipboardhelper;1'].getService(Components.interfaces.nsIClipboardHelper);
+        clipboardHelper.copyString(text);
+      }
+    }
+
+    function parsePNG(event) {
+      var image = document.getElementById('image');
+      var background = document.getElementById('background');
+      var copy = document.getElementById('code');
+      var reader  = new FileReader();
+      var urlReader  = new FileReader();
+
+      reader.onloadend = function () {
+        var png = new PNGReader(reader.result);
+
+        png.parse(function(err, png) {
+          if(err) throw err;
+          var out = png.width + ' ' + png.height
+          for(var x = 0; x < png.width; x++) {
+            for(var y = 0; y < png.height; y++) {
+              var pos = x + y * png.height;
+              var color = [0,1,2].map((i) => {
+                var num = png.pixels[pos].toString(16)
+                if(num.length < 2)
+                  num = '0' + num;
+                return num;
+              });
+              out += ' '+color.join('')
+            }
+          }
+          copy.setAttribute('data-clipboard-text', out);
+          copy.style.display = 'block';
+          new Clipboard('#code');
+        })
+     }
+
+     urlReader.onloadend = function () {
+      background.style.backgroundImage = 'url(' + urlReader.result + ')'
+     }
+
+      var file = image.files[0];
+      if(file) {
+        reader.readAsArrayBuffer(file);
+        urlReader.readAsDataURL(file);
+      }
+    }
+    </script>
+    <nav>
+      <div class="content">
+        PNG Parser
+      </div>
+    </nav>
+    <div class="content card">
+      <div class="upload-field">
+        <div class="upload-background" id="background"></div>
+        <i class="upload-box material-icons">
+          file_upload
+        </i>
+        <input type="file" class="upload-input" id="image" onchange="parsePNG()">
+      </div>
+      <button id="code" style="display: none;">
+        <i class="material-icons">content_copy</i>
+      </button>
+    </div>
+  </body>
+</html>
